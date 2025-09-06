@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Rewards App</title>
+    <!-- Chakra UI CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chakra-ui/core@1.0.0/dist/chakra-ui-core.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        /* Custom minimalist styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8f9fa;
+            color: #2D3748;
+        }
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        }
+        .content-area {
+            padding: 16px;
+            padding-bottom: 70px; /* Space for bottom nav */
+            overflow-y: auto;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            background: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 1000;
+        }
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 0.7rem;
+            color: #A0AEC0;
+            transition: all 0.3s;
+        }
+        .nav-item.active {
+            color: #3182CE;
+        }
+        .nav-item i {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 1.1rem;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            transition: all 0.2s;
+            border: 1px solid #E2E8F0;
+        }
+        .card:active {
+            transform: scale(0.98);
+        }
+        .small-text {
+            font-size: 0.8rem;
+        }
+        .x-small-text {
+            font-size: 0.75rem;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .walkthrough-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .walkthrough-content {
+            padding: 20px;
+            text-align: center;
+        }
+        .walkthrough-dots {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #E2E8F0;
+            margin: 0 4px;
+        }
+        .dot.active {
+            background: #3182CE;
+        }
+        .progress-bar {
+            height: 4px;
+            width: 100%;
+            background: #EDF2F7;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #3182CE;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+        .balance-card {
+            background: linear-gradient(135deg, #3182CE 0%, #63B3ED 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #E2E8F0;
+            font-size: 0.8rem;
+        }
+        .table th {
+            font-weight: 600;
+            color: #718096;
+        }
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .status-active {
+            background: #C6F6D5;
+            color: #276749;
+        }
+        .status-inactive {
+            background: #FED7D7;
+            color: #C53030;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #3182CE;
+            color: white;
+            border: none;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #3182CE;
+            color: #3182CE;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .feature-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .feature-list li {
+            padding: 6px 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #EDF2F7;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .feature-list i {
+            margin-right: 8px;
+            color: #3182CE;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Progress bar -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Walkthrough Screen -->
+        <div class="walkthrough-screen" id="walkthroughScreen">
+            <div class="walkthrough-content">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSI4MCIgZmlsbD0iIzMxODJDRSIgZmlsbC1vcGFjaXR5PSIwLjIiLz4KICA8cGF0aCBkPSJNMTMwIDhIMzBDMTcuOTA0NSA4IDggMTcuOTA0NSA4IDMwVjE3MEM4IDE4Mi4wOTUgMTcuOTA0NSAxOTIgMzAgMTkySDE3MEMxODIuMDk1IDE5MiAxOTIgMTgyLjA5NSAxOTIgMTcwVjMwQzE5MiAxNy45MDQ1IDE4Mi4wOTUgOCAxNzAgOEgxMzBaTTE0MCAxNTBWNzBINzBWMTUwSDE0MFpNMTQwIDUwVjMwSDcwVjUwSDE0MFoiIGZpbGw9IiMzMTgyQ0UiLz4KPC9zdmc+" alt="Survey" width="120" height="120">
+                <h2 style="margin-top: 20px; margin-bottom: 10px;">Welcome to Survey Rewards</h2>
+                <p style="color: #718096; font-size: 0.9rem; margin-bottom: 30px;">Complete surveys, earn rewards, and redeem your earnings. Get started with our easy-to-use platform.</p>
+                
+                <div class="walkthrough-dots">
+                    <div class="dot active"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                
+                <button class="btn btn-primary" style="width: 100%;" onclick="hideWalkthrough()">Get Started</button>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Surveys Screen -->
+            <div class="screen active" id="surveysScreen">
+                <h2 style="font-size: 1.3rem; margin-bottom: 16px;">Available Surveys</h2>
+                
+                <div class="card" onclick="showSurveyDetails()">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h3 style="font-size: 0.95rem; margin: 0 0 8px 0;">Consumer Habits Study</h3>
+                        <span class="badge" style="background: #E9D8FD; color: #553C9A;">$2.50</span>
+                    </div>
+                    <p class="small-text" style="color: #718096; margin: 0 0 12px 0;">Share your shopping preferences and habits in this 15-minute survey.</p>
+                    <div style="display: flex; align-items: center;">
+                        <i class="fas fa-clock" style="color: #718096; font-size: 0.8rem; margin-right: 8px;"></i>
+                        <span class="x-small-text" style="color: #718096;">15 min</span>
+                        <i class="fas fa-award" style="color: #718096; font-size: 0.8rem; margin-left: 16px; margin-right: 8px;"></i>
+                        <span class="x-small-text" style="color: #718096;">200 points</span>
+                    </div>
+                </div>
+                
+                <div class="card" onclick="showSurveyDetails()">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h3 style="font-size: 0.95rem; margin: 0 0 8px 0;">Tech Product Feedback</h3>
+                        <span class="badge" style="background: #BEE3F8; color: #2C5282;">$4.00</span>
+                    </div>
+                    <p class="small-text" style="color: #718096; margin: 0 0 12px 0;">Tell us about your experience with recent tech purchases.</p>
+                    <div style="display: flex; align-items: center;">
+                        <i class="fas fa-clock" style="color: #718096; font-size: 0.8rem; margin-right: 8px;"></i>
+                        <span class="x-small-text" style="color: #718096;">20 min</span>
+                        <i class="fas fa-award" style="color: #718096; font-size: 0.8rem; margin-left: 16px; margin-right: 8px;"></i>
+                        <span class="x-small-text" style="color: #718096;">320 points</span>
+                    </div>
+                </div>
+                
+                <div class="card" onclick="showSurveyDetails()">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h3 style="font-size: 0.95rem; margin: 0 0 8px 0;">Health & Wellness Survey</h3>
+                        <span class="badge" style="background: #C6F6D5; color: #276749;">$3.25</span>
+                    </div>
+                    <p class="small-text" style="color: #718096; margin: 0 0 12px 0;">Share your opinions on health products and wellness routines.</p>
+                    <div style="display: flex; align-items: center;">
+                        <i class="fas fa-clock" style="color: #718096; font-size: 0.8rem; margin-right: 8px;"></i>
+                        <span class="x-small-text" style="color: #718096;">18 min</span>
+                        <i class="fas fa-award" style="color: #718096; font-size: 0.8rem; margin-left: 16px; margin-right: 8px;"></i>
+                        <span class="x-small-text" style="color: #718096;">260 points</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rewards Screen -->
+            <div class="screen" id="rewardsScreen">
+                <h2 style="font-size: 1.3rem; margin-bottom: 16px;">Your Rewards</h2>
+                
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="font-size: 0.95rem; margin: 0;">Available Balance</h3>
+                        <span style="font-weight: 600; color: #3182CE;">$18.75</span>
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 1rem; margin: 20px 0 12px 0;">Redeem Your Points</h3>
+                
+                <div class="card">
+                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                        <div style="width: 40px; height: 40px; background: #E9D8FD; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            <i class="fas fa-shopping-card" style="color: #553C9A;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h4 style="font-size: 0.9rem; margin: 0 0 4px 0;">Amazon Gift Card</h4>
+                            <p class="x-small-text" style="color: #718096; margin: 0;">500 points = $5.00</p>
+                        </div>
+                        <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">Redeem</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                        <div style="width: 40px; height: 40px; background: #BEE3F8; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            <i class="fas fa-coffee" style="color: #2C5282;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h4 style="font-size: 0.9rem; margin: 0 0 4px 0;">Starbucks Gift Card</h4>
+                            <p class="x-small-text" style="color: #718096; margin: 0;">400 points = $4.00</p>
+                        </div>
+                        <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">Redeem</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                        <div style="width: 40px; height: 40px; background: #C6F6D5; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            <i class="fas fa-money-bill-wave" style="color: #276749;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h4 style="font-size: 0.9rem; margin: 0 0 4px 0;">PayPal Cash</h4>
+                            <p class="x-small-text" style="color: #718096; margin: 0;">100 points = $1.00</p>
+                        </div>
+                        <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;">Redeem</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Screen -->
+            <div class="screen" id="profileScreen">
+                <h2 style="font-size: 1.3rem; margin-bottom: 16px;">Your Profile</h2>
+                
+                <div class="balance-card">
+                    <p class="x-small-text" style="margin: 0 0 8px 0; opacity: 0.9;">Total Balance</p>
+                    <h2 style="font-size: 1.8rem; margin: 0 0 8px 0;">$18.75</h2>
+                    <p class="x-small-text" style="margin: 0; opacity: 0.9;">Equivalent to 1,875 points</p>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin: 16px 0;">
+                    <button class="btn btn-primary" style="flex: 1; margin-right: 8px;" onclick="showDepositScreen()">Deposit</button>
+                    <button class="btn btn-outline" style="flex: 1; margin-left: 8px;" onclick="showWithdrawalScreen()">Withdraw</button>
+                </div>
+                
+                <div class="card">
+                    <h3 style="font-size: 0.95rem; margin: 0 0 12px 0;">Account Status</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="small-text">Verification Status</span>
+                        <span class="status-badge status-active">Verified</span>
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 1rem; margin: 20px 0 12px 0;">Completed Surveys</h3>
+                <div class="card">
+                    <div style="overflow-x: auto;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Survey</th>
+                                    <th>Earnings</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Jun 12</td>
+                                    <td>Consumer Preferences</td>
+                                    <td>$2.50</td>
+                                </tr>
+                                <tr>
+                                    <td>Jun 10</td>
+                                    <td>Tech Usage</td>
+                                    <td>$3.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Jun 5</td>
+                                    <td>Shopping Habits</td>
+                                    <td>$2.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Screen -->
+            <div class="screen" id="settingsScreen">
+                <h2 style="font-size: 1.3rem; margin-bottom: 16px;">Settings</h2>
+                
+                <div class="card">
+                    <h3 style="font-size: 0.95rem; margin: 0 0 12px 0;">Account Settings</h3>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <p class="small-text" style="margin: 0 0 6px 0; font-weight: 500;">Email Notifications</p>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <p class="small-text" style="margin: 0 0 6px 0; font-weight: 500;">Push Notifications</p>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    
+                    <div>
+                        <p class="small-text" style="margin: 0 0 6px 0; font-weight: 500;">Survey Recommendations</p>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3 style="font-size: 0.95rem; margin: 0 0 12px 0;">App Information</h3>
+                    
+                    <div style="margin-bottom: 12px;">
+                        <p class="small-text" style="margin: 0 0 4px 0; font-weight: 500;">Version</p>
+                        <p class="x-small-text" style="margin: 0; color: #718096;">1.2.3</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 12px;">
+                        <p class="small-text" style="margin: 0 0 4px 0; font-weight: 500;">Privacy Policy</p>
+                        <p class="x-small-text" style="margin: 0; color: #718096;">View our privacy policy</p>
+                    </div>
+                    
+                    <div>
+                        <p class="small-text" style="margin: 0 0 4px 0; font-weight: 500;">Terms of Service</p>
+                        <p class="x-small-text" style="margin: 0; color: #718096;">View our terms of service</p>
+                    </div>
+                </div>
+                
+                <button class="btn btn-outline" style="width: 100%; margin-top: 20px;">Log Out</button>
+            </div>
+
+            <!-- Survey Details Screen -->
+            <div class="screen" id="surveyDetailsScreen">
+                <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                    <i class="fas fa-arrow-left" style="font-size: 1.2rem; margin-right: 16px; cursor: pointer;" onclick="goBackToSurveys()"></i>
+                    <h2 style="font-size: 1.3rem; margin: 0;">Survey Details</h2>
+                </div>
+                
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <h3 style="font-size: 1rem; margin: 0;">Consumer Habits Study</h3>
+                        <span class="badge" style="background: #E9D8FD; color: #553C9A;">$2.50</span>
+                    </div>
+                    
+                    <p class="small-text" style="color: #718096; margin: 0 0 16px 0;">Share your shopping preferences and habits in this 15-minute survey. Your responses will help shape future products and services.</p>
+                    
+                    <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                        <i class="fas fa-clock" style="color: #718096; font-size: 0.8rem; margin-right: 8px;"></i>
+                        <span class="x-small-text" style="color: #718096; margin-right: 16px;">15 min</span>
+                        <i class="fas fa-award" style="color: #718096; font-size: 0.8rem; margin-right: 8px;"></i>
+                        <span class="x-small-text" style="color: #718096;">200 points</span>
+                    </div>
+                    
+                    <h4 style="font-size: 0.9rem; margin: 0 0 8px 0;">Requirements:</h4>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check-circle"></i> Age 18-65</li>
+                        <li><i class="fas fa-check-circle"></i> Resident of United States</li>
+                        <li><i class="fas fa-check-circle"></i> Makes online purchases at least monthly</li>
+                    </ul>
+                </div>
+                
+                <button class="btn btn-primary" style="width: 100%;">Start Survey</button>
+            </div>
+
+            <!-- Deposit Screen -->
+            <div class="screen" id="depositScreen">
+                <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                    <i class="fas fa-arrow-left" style="font-size: 1.2rem; margin-right: 16px; cursor: pointer;" onclick="goBackToProfile()"></i>
+                    <h2 style="font-size: 1.3rem; margin: 0;">Deposit Funds</h2>
+                </div>
+                
+                <div class="card">
+                    <div class="form-group">
+                        <label class="form-label">Amount</label>
+                        <input type="number" class="form-input" placeholder="Enter amount">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Payment Method</label>
+                        <select class="form-input">
+                            <option>Credit Card</option>
+                            <option>PayPal</option>
+                            <option>Bank Transfer</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Card Number</label>
+                        <input type="text" class="form-input" placeholder="Enter card number">
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Expiry Date</label>
+                            <input type="text" class="form-input" placeholder="MM/YY">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">CVV</label>
+                            <input type="text" class="form-input" placeholder="CVV">
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" style="width: 100%;">Deposit</button>
+            </div>
+
+            <!-- Withdrawal Screen -->
+            <div class="screen" id="withdrawalScreen">
+                <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                    <i class="fas fa-arrow-left" style="font-size: 1.2rem; margin-right: 16px; cursor: pointer;" onclick="goBackToProfile()"></i>
+                    <h2 style="font-size: 1.3rem; margin: 0;">Withdraw Funds</h2>
+                </div>
+                
+                <div class="card">
+                    <div class="form-group">
+                        <label class="form-label">Amount</label>
+                        <input type="number" class="form-input" placeholder="Enter amount">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Withdrawal Method</label>
+                        <select class="form-input">
+                            <option>PayPal</option>
+                            <option>Bank Transfer</option>
+                            <option>Direct Deposit</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">PayPal Email</label>
+                        <input type="email" class="form-input" placeholder="Enter your PayPal email">
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" style="width: 100%;">Withdraw</button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="showScreen('surveysScreen')">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Surveys</span>
+            </div>
+            <div class="nav-item" onclick="showScreen('rewardsScreen')">
+                <i class="fas fa-gift"></i>
+                <span>Rewards</span>
+            </div>
+            <div class="nav-item" onclick="showScreen('profileScreen')">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </div>
+            <div class="nav-item" onclick="showScreen('settingsScreen')">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Show the walkthrough screen initially
+        document.addEventListener('DOMContentLoaded', function() {
+            showWalkthrough();
+        });
+
+        // Function to show walkthrough screen
+        function showWalkthrough() {
+            document.getElementById('walkthroughScreen').style.display = 'flex';
+            document.getElementById('progressFill').style.width = '0%';
+        }
+
+        // Function to hide walkthrough screen
+        function hideWalkthrough() {
+            document.getElementById('walkthroughScreen').style.display = 'none';
+            document.getElementById('progressFill').style.width = '100%';
+        }
+
+        // Function to show a specific screen
+        function showScreen(screenId) {
+            // Hide all screens
+            var screens = document.getElementsByClassName('screen');
+            for (var i = 0; i < screens.length; i++) {
+                screens[i].classList.remove('active');
+            }
+            
+            // Show the requested screen
+            document.getElementById(screenId).classList.add('active');
+            
+            // Update navigation active state
+            var navItems = document.getElementsByClassName('nav-item');
+            for (var i = 0; i < navItems.length; i++) {
+                navItems[i].classList.remove('active');
+            }
+            
+            // Set the appropriate nav item as active
+            if (screenId === 'surveysScreen') navItems[0].classList.add('active');
+            if (screenId === 'rewardsScreen') navItems[1].classList.add('active');
+            if (screenId === 'profileScreen') navItems[2].classList.add('active');
+            if (screenId === 'settingsScreen') navItems[3].classList.add('active');
+        }
+
+        // Function to show survey details
+        function showSurveyDetails() {
+            showScreen('surveyDetailsScreen');
+        }
+
+        // Function to go back to surveys from details
+        function goBackToSurveys() {
+            showScreen('surveysScreen');
+        }
+
+        // Function to show deposit screen
+        function showDepositScreen() {
+            showScreen('depositScreen');
+        }
+
+        // Function to show withdrawal screen
+        function showWithdrawalScreen() {
+            showScreen('withdrawalScreen');
+        }
+
+        // Function to go back to profile from deposit/withdrawal
+        function goBackToProfile() {
+            showScreen('profileScreen');
+        }
+    </script>
+</body>
+</html>
