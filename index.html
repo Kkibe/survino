@@ -4,16 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Survey Rewards App</title>
-    <!-- Chakra UI CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chakra-ui/core@1.0.0/dist/chakra-ui-core.min.css">
-    <!-- Font Awesome for icons -->
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        /* Custom minimalist styles */
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #f8f9fa;
             color: #2D3748;
+            margin: 0;
+            padding: 0;
         }
         .app-container {
             max-width: 480px;
@@ -25,9 +34,52 @@
         }
         .content-area {
             padding: 16px;
-            padding-bottom: 70px; /* Space for bottom nav */
+            padding-bottom: 70px;
             overflow-y: auto;
         }
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+
+        /* Walkthrough Screen */
+        .walkthrough-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .walkthrough-content {
+            text-align: center;
+            max-width: 350px;
+        }
+        .walkthrough-dots {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #E2E8F0;
+            margin: 0 4px;
+        }
+        .dot.active {
+            background: #3182CE;
+        }
+
+        /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -54,6 +106,8 @@
             margin-bottom: 4px;
             font-size: 1.1rem;
         }
+
+        /* Common Components */
         .card {
             background: white;
             border-radius: 8px;
@@ -79,38 +133,114 @@
             font-size: 0.7rem;
             font-weight: 500;
         }
-        .walkthrough-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .walkthrough-content {
-            padding: 20px;
+        .btn {
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-block;
             text-align: center;
         }
-        .walkthrough-dots {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-        }
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #E2E8F0;
-            margin: 0 4px;
-        }
-        .dot.active {
+        .btn-primary {
             background: #3182CE;
+            color: white;
         }
+        .btn-primary:hover {
+            background: #2b6cb0;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #3182CE;
+            color: #3182CE;
+        }
+        .btn-outline:hover {
+            background: #EBF4FF;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            font-size: 1.3rem;
+            margin: 0;
+        }
+        .back-btn {
+            margin-right: 16px;
+            font-size: 1.2rem;
+            color: #3182CE;
+            cursor: pointer;
+        }
+
+        /* Auth Screens */
+        .auth-container {
+            padding: 20px;
+        }
+        .auth-tabs {
+            display: flex;
+            border-bottom: 1px solid #E2E8F0;
+            margin-bottom: 20px;
+        }
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: 16px;
+            font-weight: 500;
+            color: #A0AEC0;
+            cursor: pointer;
+        }
+        .auth-tab.active {
+            color: #3182CE;
+            border-bottom: 2px solid #3182CE;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #4A5568;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #3182CE;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+        .input-icon {
+            position: relative;
+        }
+        .input-icon i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #A0AEC0;
+        }
+        .input-icon .form-input {
+            padding-left: 40px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #A0AEC0;
+            cursor: pointer;
+        }
+
+        /* Progress bar */
         .progress-bar {
             height: 4px;
             width: 100%;
@@ -125,96 +255,20 @@
             width: 0%;
             transition: width 0.3s;
         }
-        .screen {
-            display: none;
+
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3182CE;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
         }
-        .screen.active {
-            display: block;
-        }
-        .balance-card {
-            background: linear-gradient(135deg, #3182CE 0%, #63B3ED 100%);
-            color: white;
-            border-radius: 12px;
-            padding: 16px;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .table th, .table td {
-            padding: 8px;
-            text-align: left;
-            border-bottom: 1px solid #E2E8F0;
-            font-size: 0.8rem;
-        }
-        .table th {
-            font-weight: 600;
-            color: #718096;
-        }
-        .status-badge {
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 500;
-        }
-        .status-active {
-            background: #C6F6D5;
-            color: #276749;
-        }
-        .status-inactive {
-            background: #FED7D7;
-            color: #C53030;
-        }
-        .btn {
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-primary {
-            background: #3182CE;
-            color: white;
-            border: none;
-        }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #3182CE;
-            color: #3182CE;
-        }
-        .form-group {
-            margin-bottom: 16px;
-        }
-        .form-label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        .form-input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #E2E8F0;
-            border-radius: 6px;
-            font-size: 0.9rem;
-        }
-        .feature-list {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-        }
-        .feature-list li {
-            padding: 6px 0;
-            font-size: 0.85rem;
-            border-bottom: 1px solid #EDF2F7;
-        }
-        .feature-list li:last-child {
-            border-bottom: none;
-        }
-        .feature-list i {
-            margin-right: 8px;
-            color: #3182CE;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -244,8 +298,79 @@
 
         <!-- Content Area -->
         <div class="content-area">
+            <!-- Login Screen -->
+            <div class="screen" id="loginScreen">
+                <div class="auth-container">
+                    <h1 style="font-size: 1.5rem; margin-bottom: 30px; text-align: center;">Sign In to Survey Rewards</h1>
+                    
+                    <div class="auth-tabs">
+                        <div class="auth-tab active" id="loginTab" onclick="showAuthForm('login')">Sign In</div>
+                        <div class="auth-tab" id="registerTab" onclick="showAuthForm('register')">Create Account</div>
+                    </div>
+                    
+                    <form id="authForm">
+                        <div id="nameFields" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Full Name</label>
+                                <div class="input-icon">
+                                    <i class="fas fa-user"></i>
+                                    <input type="text" class="form-input" id="fullName" placeholder="Enter your full name">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <div class="input-icon">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" class="form-input" id="email" placeholder="Enter your email">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="input-icon">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" class="form-input" id="password" placeholder="Enter your password">
+                                <span class="password-toggle" onclick="togglePassword('password', this)">
+                                    <i class="fas fa-eye"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div id="confirmPasswordField" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Confirm Password</label>
+                                <div class="input-icon">
+                                    <i class="fas fa-lock"></i>
+                                    <input type="password" class="form-input" id="confirmPassword" placeholder="Confirm your password">
+                                    <span class="password-toggle" onclick="togglePassword('confirmPassword', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="loginOptions">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <label>
+                                    <input type="checkbox" id="rememberMe"> Remember me
+                                </label>
+                                <a href="#" style="color: #3182CE; text-decoration: none; font-size: 0.85rem;">Forgot password?</a>
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="handleAuth()" id="authButton">Sign In</button>
+                    </form>
+                    
+                    <div style="text-align: center; margin-top: 30px;">
+                        <p style="color: #718096; font-size: 0.85rem;" id="authFooter">Don't have an account? <a href="#" onclick="showAuthForm('register')" style="color: #3182CE;">Sign up</a></p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Surveys Screen -->
-            <div class="screen active" id="surveysScreen">
+            <div class="screen" id="surveysScreen">
                 <h2 style="font-size: 1.3rem; margin-bottom: 16px;">Available Surveys</h2>
                 
                 <div class="card" onclick="showSurveyDetails()">
@@ -287,6 +412,109 @@
                         <span class="x-small-text" style="color: #718096;">18 min</span>
                         <i class="fas fa-award" style="color: #718096; font-size: 0.8rem; margin-left: 16px; margin-right: 8px;"></i>
                         <span class="x-small-text" style="color: #718096;">260 points</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Survey Details Screen -->
+            <div class="screen" id="surveyDetailsScreen">
+                <div class="header">
+                    <div class="back-btn" onclick="goBackToSurveys()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <h1>Survey Details</h1>
+                </div>
+                
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <h3 style="font-size: 1rem; margin: 0;">Consumer Habits Study</h3>
+                        <span class="badge" style="background: #E9D8FD; color: #553C9A;">$2.50</span>
+                    </div>
+                    
+                    <p class="small-text" style="color: #718096; margin: 0 0 16px 0;">Share your shopping preferences and habits in this 15-minute survey. Your responses will help shape future products and services.</p>
+                    
+                    <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                        <i class="fas fa-clock" style="color: #718096; font-size: 0.8rem; margin-right: 8px;"></i>
+                        <span class="x-small-text" style="color: #718096; margin-right: 16px;">15 min</span>
+                        <i class="fas fa-award" style="color: #718096; font-size: 0.8rem; margin-right: 8px;"></i>
+                        <span class="x-small-text" style="color: #718096;">200 points</span>
+                    </div>
+                    
+                    <h4 style="font-size: 0.9rem; margin: 0 0 8px 0;">Requirements:</h4>
+                    <ul style="padding-left: 20px; margin: 0 0 16px 0;">
+                        <li class="small-text" style="margin-bottom: 8px;">Age 18-65</li>
+                        <li class="small-text" style="margin-bottom: 8px;">Resident of United States</li>
+                        <li class="small-text">Makes online purchases at least monthly</li>
+                    </ul>
+                </div>
+                
+                <button class="btn btn-primary" style="width: 100%;" onclick="startSurvey()">Start Survey</button>
+            </div>
+
+            <!-- Survey in Progress Screen -->
+            <div class="screen" id="surveyProgressScreen">
+                <div class="header">
+                    <div class="back-btn" onclick="confirmExitSurvey()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <h1>Survey in Progress</h1>
+                </div>
+                
+                <div class="card">
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="font-size: 1.1rem; margin: 0 0 8px 0;">Consumer Habits Study</h2>
+                        <p class="small-text" style="color: #718096; margin: 0;">Question 3 of 12</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span class="small-text">Progress</span>
+                            <span class="small-text">25%</span>
+                        </div>
+                        <div style="height: 8px; background: #E2E8F0; border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: 25%; background: #3182CE; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 12px; background: #FAF5FF; border-radius: 6px; margin-bottom: 20px; color: #6B46C1;">
+                        <i class="fas fa-clock" style="margin-right: 8px;"></i>
+                        <span class="small-text">Estimated time remaining: 12 minutes</span>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="font-size: 1rem; margin: 0 0 12px 0;">How often do you shop online for clothing?</h3>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; padding: 12px; border: 1px solid #E2E8F0; border-radius: 6px; margin-bottom: 8px;">
+                                <input type="radio" id="option1" name="clothingFrequency" checked style="margin-right: 12px;">
+                                <label for="option1" class="small-text">Once a week or more</label>
+                            </div>
+                            <div style="display: flex; align-items: center; padding: 12px; border: 1px solid #E2E8F0; border-radius: 6px; margin-bottom: 8px;">
+                                <input type="radio" id="option2" name="clothingFrequency" style="margin-right: 12px;">
+                                <label for="option2" class="small-text">2-3 times a month</label>
+                            </div>
+                            <div style="display: flex; align-items: center; padding: 12px; border: 1px solid #E2E8F0; border-radius: 6px; margin-bottom: 8px;">
+                                <input type="radio" id="option3" name="clothingFrequency" style="margin-right: 12px;">
+                                <label for="option3" class="small-text">Once a month</label>
+                            </div>
+                            <div style="display: flex; align-items: center; padding: 12px; border: 1px solid #E2E8F0; border-radius: 6px; margin-bottom: 8px;">
+                                <input type="radio" id="option4" name="clothingFrequency" style="margin-right: 12px;">
+                                <label for="option4" class="small-text">Less than once a month</label>
+                            </div>
+                            <div style="display: flex; align-items: center; padding: 12px; border: 1px solid #E2E8F0; border-radius: 6px;">
+                                <input type="radio" id="option5" name="clothingFrequency" style="margin-right: 12px;">
+                                <label for="option5" class="small-text">Never</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between;">
+                        <button class="btn btn-outline" onclick="previousQuestion()">
+                            <i class="fas fa-arrow-left"></i> Previous
+                        </button>
+                        <button class="btn btn-primary" onclick="nextQuestion()">
+                            Next <i class="fas fa-arrow-right"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -348,7 +576,7 @@
             <div class="screen" id="profileScreen">
                 <h2 style="font-size: 1.3rem; margin-bottom: 16px;">Your Profile</h2>
                 
-                <div class="balance-card">
+                <div style="background: linear-gradient(135deg, #3182CE 0%, #63B3ED 100%); color: white; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
                     <p class="x-small-text" style="margin: 0 0 8px 0; opacity: 0.9;">Total Balance</p>
                     <h2 style="font-size: 1.8rem; margin: 0 0 8px 0;">$18.75</h2>
                     <p class="x-small-text" style="margin: 0; opacity: 0.9;">Equivalent to 1,875 points</p>
@@ -363,36 +591,36 @@
                     <h3 style="font-size: 0.95rem; margin: 0 0 12px 0;">Account Status</h3>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span class="small-text">Verification Status</span>
-                        <span class="status-badge status-active">Verified</span>
+                        <span style="background: #C6F6D5; color: #276749; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 500;">Verified</span>
                     </div>
                 </div>
                 
                 <h3 style="font-size: 1rem; margin: 20px 0 12px 0;">Completed Surveys</h3>
                 <div class="card">
                     <div style="overflow-x: auto;">
-                        <table class="table">
+                        <table style="width: 100%; border-collapse: collapse;">
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Survey</th>
-                                    <th>Earnings</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem; color: #718096; font-weight: 600;">Date</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem; color: #718096; font-weight: 600;">Survey</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem; color: #718096; font-weight: 600;">Earnings</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>Jun 12</td>
-                                    <td>Consumer Preferences</td>
-                                    <td>$2.50</td>
+                                    <td style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem;">Jun 12</td>
+                                    <td style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem;">Consumer Preferences</td>
+                                    <td style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem;">$2.50</td>
                                 </tr>
                                 <tr>
-                                    <td>Jun 10</td>
-                                    <td>Tech Usage</td>
-                                    <td>$3.00</td>
+                                    <td style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem;">Jun 10</td>
+                                    <td style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem;">Tech Usage</td>
+                                    <td style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem;">$3.00</td>
                                 </tr>
                                 <tr>
-                                    <td>Jun 5</td>
-                                    <td>Shopping Habits</td>
-                                    <td>$2.00</td>
+                                    <td style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem;">Jun 5</td>
+                                    <td style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem;">Shopping Habits</td>
+                                    <td style="padding: 8px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.8rem;">$2.00</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -409,25 +637,28 @@
                     
                     <div style="margin-bottom: 16px;">
                         <p class="small-text" style="margin: 0 0 6px 0; font-weight: 500;">Email Notifications</p>
-                        <label class="switch">
-                            <input type="checkbox" checked>
-                            <span class="slider round"></span>
+                        <label style="display: inline-block; position: relative; width: 50px; height: 24px;">
+                            <input type="checkbox" checked style="opacity: 0; width: 0; height: 0;">
+                            <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3182CE; transition: .4s; border-radius: 24px;"></span>
+                            <span style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
                         </label>
                     </div>
                     
                     <div style="margin-bottom: 16px;">
                         <p class="small-text" style="margin: 0 0 6px 0; font-weight: 500;">Push Notifications</p>
-                        <label class="switch">
-                            <input type="checkbox" checked>
-                            <span class="slider round"></span>
+                        <label style="display: inline-block; position: relative; width: 50px; height: 24px;">
+                            <input type="checkbox" checked style="opacity: 0; width: 0; height: 0;">
+                            <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3182CE; transition: .4s; border-radius: 24px;"></span>
+                            <span style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
                         </label>
                     </div>
                     
                     <div>
                         <p class="small-text" style="margin: 0 0 6px 0; font-weight: 500;">Survey Recommendations</p>
-                        <label class="switch">
-                            <input type="checkbox" checked>
-                            <span class="slider round"></span>
+                        <label style="display: inline-block; position: relative; width: 50px; height: 24px;">
+                            <input type="checkbox" checked style="opacity: 0; width: 0; height: 0;">
+                            <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3182CE; transition: .4s; border-radius: 24px;"></span>
+                            <span style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
                         </label>
                     </div>
                 </div>
@@ -454,44 +685,13 @@
                 <button class="btn btn-outline" style="width: 100%; margin-top: 20px;">Log Out</button>
             </div>
 
-            <!-- Survey Details Screen -->
-            <div class="screen" id="surveyDetailsScreen">
-                <div style="display: flex; align-items: center; margin-bottom: 16px;">
-                    <i class="fas fa-arrow-left" style="font-size: 1.2rem; margin-right: 16px; cursor: pointer;" onclick="goBackToSurveys()"></i>
-                    <h2 style="font-size: 1.3rem; margin: 0;">Survey Details</h2>
-                </div>
-                
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                        <h3 style="font-size: 1rem; margin: 0;">Consumer Habits Study</h3>
-                        <span class="badge" style="background: #E9D8FD; color: #553C9A;">$2.50</span>
-                    </div>
-                    
-                    <p class="small-text" style="color: #718096; margin: 0 0 16px 0;">Share your shopping preferences and habits in this 15-minute survey. Your responses will help shape future products and services.</p>
-                    
-                    <div style="display: flex; align-items: center; margin-bottom: 16px;">
-                        <i class="fas fa-clock" style="color: #718096; font-size: 0.8rem; margin-right: 8px;"></i>
-                        <span class="x-small-text" style="color: #718096; margin-right: 16px;">15 min</span>
-                        <i class="fas fa-award" style="color: #718096; font-size: 0.8rem; margin-right: 8px;"></i>
-                        <span class="x-small-text" style="color: #718096;">200 points</span>
-                    </div>
-                    
-                    <h4 style="font-size: 0.9rem; margin: 0 0 8px 0;">Requirements:</h4>
-                    <ul class="feature-list">
-                        <li><i class="fas fa-check-circle"></i> Age 18-65</li>
-                        <li><i class="fas fa-check-circle"></i> Resident of United States</li>
-                        <li><i class="fas fa-check-circle"></i> Makes online purchases at least monthly</li>
-                    </ul>
-                </div>
-                
-                <button class="btn btn-primary" style="width: 100%;">Start Survey</button>
-            </div>
-
             <!-- Deposit Screen -->
             <div class="screen" id="depositScreen">
-                <div style="display: flex; align-items: center; margin-bottom: 16px;">
-                    <i class="fas fa-arrow-left" style="font-size: 1.2rem; margin-right: 16px; cursor: pointer;" onclick="goBackToProfile()"></i>
-                    <h2 style="font-size: 1.3rem; margin: 0;">Deposit Funds</h2>
+                <div class="header">
+                    <div class="back-btn" onclick="goBackToProfile()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <h1>Deposit Funds</h1>
                 </div>
                 
                 <div class="card">
@@ -531,9 +731,11 @@
 
             <!-- Withdrawal Screen -->
             <div class="screen" id="withdrawalScreen">
-                <div style="display: flex; align-items: center; margin-bottom: 16px;">
-                    <i class="fas fa-arrow-left" style="font-size: 1.2rem; margin-right: 16px; cursor: pointer;" onclick="goBackToProfile()"></i>
-                    <h2 style="font-size: 1.3rem; margin: 0;">Withdraw Funds</h2>
+                <div class="header">
+                    <div class="back-btn" onclick="goBackToProfile()">
+                        <i class="fas fa-arrow-left"></i>
+                    </div>
+                    <h1>Withdraw Funds</h1>
                 </div>
                 
                 <div class="card">
@@ -559,6 +761,19 @@
                 
                 <button class="btn btn-primary" style="width: 100%;">Withdraw</button>
             </div>
+
+            <!-- Success Screens -->
+            <div class="screen" id="successScreen">
+                <div style="text-align: center; padding: 40px 0;">
+                    <div style="width: 80px; height: 80px; background: #C6F6D5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 2rem; color: #38A169;">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h2 style="margin-bottom: 10px;" id="successTitle">Success!</h2>
+                    <p style="color: #718096; max-width: 300px; margin: 0 auto;" id="successMessage">Your action was completed successfully.</p>
+                    
+                    <button class="btn btn-primary" style="margin-top: 30px;" onclick="goToDashboard()">Continue</button>
+                </div>
+            </div>
         </div>
 
         <!-- Bottom Navigation -->
@@ -583,23 +798,133 @@
     </div>
 
     <script>
+        // Firebase configuration (replace with your actual config)
+        const firebaseConfig = {
+  apiKey: "AIzaSyC2ToA-UtctUC_tI4WUF85c9yhsWIGK5Kk",
+  authDomain: "survey-rewards-bdbc4.firebaseapp.com",
+  projectId: "survey-rewards-bdbc4",
+  storageBucket: "survey-rewards-bdbc4.firebasestorage.app",
+  messagingSenderId: "812820745560",
+  appId: "1:812820745560:web:a80467dad6c038634be92d",
+  measurementId: "G-K442H828VK"
+        };
+        
+        // Initialize Firebase (commented out for safety in this example)
+        // firebase.initializeApp(firebaseConfig);
+        // const auth = firebase.auth();
+        // const db = firebase.firestore();
+        
+        // Mock Firebase functions for demonstration
+        const mockAuth = {
+            currentUser: null,
+            signInWithEmailAndPassword: (email, password) => {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        mockAuth.currentUser = { 
+                            uid: 'mock-user-id', 
+                            email: email,
+                            displayName: 'John Doe'
+                        };
+                        resolve({ user: mockAuth.currentUser });
+                    }, 1000);
+                });
+            },
+            createUserWithEmailAndPassword: (email, password, name) => {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        mockAuth.currentUser = { 
+                            uid: 'mock-user-id', 
+                            email: email,
+                            displayName: name
+                        };
+                        resolve({ user: mockAuth.currentUser });
+                    }, 1000);
+                });
+            },
+            signOut: () => {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        mockAuth.currentUser = null;
+                        resolve();
+                    }, 500);
+                });
+            }
+        };
+        
+        const mockFirestore = {
+            collection: (name) => {
+                return {
+                    doc: (id) => {
+                        return {
+                            set: (data) => {
+                                return new Promise((resolve) => {
+                                    setTimeout(() => {
+                                        console.log('Data saved to Firestore:', data);
+                                        resolve();
+                                    }, 500);
+                                });
+                            },
+                            get: () => {
+                                return new Promise((resolve) => {
+                                    setTimeout(() => {
+                                        resolve({
+                                            exists: true,
+                                            data: () => ({
+                                                points: 1250,
+                                                balance: 12.50,
+                                                completedSurveys: 5
+                                            })
+                                        });
+                                    }, 500);
+                                });
+                            }
+                        };
+                    }
+                };
+            }
+        };
+        
+        // App state
+        let currentUser = null;
+        let userData = null;
+        
         // Show the walkthrough screen initially
         document.addEventListener('DOMContentLoaded', function() {
-            showWalkthrough();
+            // Check if user has seen walkthrough before
+            const hasSeenWalkthrough = localStorage.getItem('hasSeenWalkthrough');
+            
+            if (!hasSeenWalkthrough) {
+                showWalkthrough();
+            } else {
+                // Check if user is logged in
+                const savedUser = localStorage.getItem('currentUser');
+                if (savedUser) {
+                    currentUser = JSON.parse(savedUser);
+                    userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                    showScreen('surveysScreen');
+                } else {
+                    showScreen('loginScreen');
+                }
+            }
+            
+            // Initialize progress bar
+            document.getElementById('progressFill').style.width = '100%';
         });
-
+        
         // Function to show walkthrough screen
         function showWalkthrough() {
             document.getElementById('walkthroughScreen').style.display = 'flex';
             document.getElementById('progressFill').style.width = '0%';
         }
-
+        
         // Function to hide walkthrough screen
         function hideWalkthrough() {
             document.getElementById('walkthroughScreen').style.display = 'none';
             document.getElementById('progressFill').style.width = '100%';
+            localStorage.setItem('hasSeenWalkthrough', 'true');
+            showScreen('loginScreen');
         }
-
+        
         // Function to show a specific screen
         function showScreen(screenId) {
             // Hide all screens
@@ -612,39 +937,213 @@
             document.getElementById(screenId).classList.add('active');
             
             // Update navigation active state
-            var navItems = document.getElementsByClassName('nav-item');
-            for (var i = 0; i < navItems.length; i++) {
-                navItems[i].classList.remove('active');
+            if (['surveysScreen', 'rewardsScreen', 'profileScreen', 'settingsScreen'].includes(screenId)) {
+                var navItems = document.getElementsByClassName('nav-item');
+                for (var i = 0; i < navItems.length; i++) {
+                    navItems[i].classList.remove('active');
+                }
+                
+                // Set the appropriate nav item as active
+                if (screenId === 'surveysScreen') navItems[0].classList.add('active');
+                if (screenId === 'rewardsScreen') navItems[1].classList.add('active');
+                if (screenId === 'profileScreen') navItems[2].classList.add('active');
+                if (screenId === 'settingsScreen') navItems[3].classList.add('active');
+            }
+        }
+        
+        // Function to show login or register form
+        function showAuthForm(type) {
+            if (type === 'login') {
+                document.getElementById('loginTab').classList.add('active');
+                document.getElementById('registerTab').classList.remove('active');
+                document.getElementById('nameFields').style.display = 'none';
+                document.getElementById('confirmPasswordField').style.display = 'none';
+                document.getElementById('loginOptions').style.display = 'block';
+                document.getElementById('authButton').textContent = 'Sign In';
+                document.getElementById('authFooter').innerHTML = 'Don\'t have an account? <a href="#" onclick="showAuthForm(\'register\')">Sign up</a>';
+            } else {
+                document.getElementById('loginTab').classList.remove('active');
+                document.getElementById('registerTab').classList.add('active');
+                document.getElementById('nameFields').style.display = 'block';
+                document.getElementById('confirmPasswordField').style.display = 'block';
+                document.getElementById('loginOptions').style.display = 'none';
+                document.getElementById('authButton').textContent = 'Create Account';
+                document.getElementById('authFooter').innerHTML = 'Already have an account? <a href="#" onclick="showAuthForm(\'login\')">Sign in</a>';
+            }
+        }
+        
+        // Function to toggle password visibility
+        function togglePassword(inputId, toggleElement) {
+            const passwordInput = document.getElementById(inputId);
+            const icon = toggleElement.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+        
+        // Function to handle authentication
+        function handleAuth() {
+            const isLogin = document.getElementById('authButton').textContent === 'Sign In';
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('Please fill in all fields');
+                return;
             }
             
-            // Set the appropriate nav item as active
-            if (screenId === 'surveysScreen') navItems[0].classList.add('active');
-            if (screenId === 'rewardsScreen') navItems[1].classList.add('active');
-            if (screenId === 'profileScreen') navItems[2].classList.add('active');
-            if (screenId === 'settingsScreen') navItems[3].classList.add('active');
+            if (!isLogin) {
+                const name = document.getElementById('fullName').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                if (!name) {
+                    alert('Please enter your name');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match');
+                    return;
+                }
+                
+                // Show loading state
+                const authButton = document.getElementById('authButton');
+                const originalText = authButton.textContent;
+                authButton.innerHTML = '<div class="spinner"></div>';
+                authButton.disabled = true;
+                
+                // Mock Firebase registration
+                mockAuth.createUserWithEmailAndPassword(email, password, name)
+                    .then((result) => {
+                        currentUser = result.user;
+                        
+                        // Create user data in Firestore
+                        userData = {
+                            name: name,
+                            email: email,
+                            points: 100, // Starting bonus
+                            balance: 1.00,
+                            joined: new Date().toISOString(),
+                            status: "Verified",
+                            completedSurveys: 0
+                        };
+                        
+                        // Mock saving to Firestore
+                        return mockFirestore.collection('users').doc(currentUser.uid).set(userData);
+                    })
+                    .then(() => {
+                        // Save to localStorage
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        localStorage.setItem('userData', JSON.stringify(userData));
+                        
+                        // Show success message
+                        showSuccess('Account Created', 'Your account has been created successfully!');
+                    })
+                    .catch((error) => {
+                        alert('Error creating account: ' + error.message);
+                        authButton.textContent = originalText;
+                        authButton.disabled = false;
+                    });
+                    
+            } else {
+                // Show loading state
+                const authButton = document.getElementById('authButton');
+                const originalText = authButton.textContent;
+                authButton.innerHTML = '<div class="spinner"></div>';
+                authButton.disabled = true;
+                
+                // Mock Firebase login
+                mockAuth.signInWithEmailAndPassword(email, password)
+                    .then((result) => {
+                        currentUser = result.user;
+                        
+                        // Get user data from Firestore
+                        return mockFirestore.collection('users').doc(currentUser.uid).get();
+                    })
+                    .then((doc) => {
+                        if (doc.exists) {
+                            userData = doc.data();
+                            
+                            // Save to localStorage
+                            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            localStorage.setItem('userData', JSON.stringify(userData));
+                            
+                            // Show main app screen
+                            showScreen('surveysScreen');
+                        } else {
+                            alert('No user data found');
+                        }
+                    })
+                    .catch((error) => {
+                        alert('Error signing in: ' + error.message);
+                        authButton.textContent = originalText;
+                        authButton.disabled = false;
+                    });
+            }
         }
-
+        
+        // Function to show success screen
+        function showSuccess(title, message) {
+            document.getElementById('successTitle').textContent = title;
+            document.getElementById('successMessage').textContent = message;
+            showScreen('successScreen');
+        }
+        
+        // Function to go to dashboard
+        function goToDashboard() {
+            showScreen('surveysScreen');
+        }
+        
         // Function to show survey details
         function showSurveyDetails() {
             showScreen('surveyDetailsScreen');
         }
-
-        // Function to go back to surveys from details
+        
+        // Function to go back to surveys
         function goBackToSurveys() {
             showScreen('surveysScreen');
         }
-
+        
+        // Function to start a survey
+        function startSurvey() {
+            showScreen('surveyProgressScreen');
+        }
+        
+        // Function to confirm exit from survey
+        function confirmExitSurvey() {
+            if (confirm('Are you sure you want to leave? Your progress will be saved.')) {
+                goBackToSurveys();
+            }
+        }
+        
+        // Function to go to next question
+        function nextQuestion() {
+            alert('This would go to the next question in a real implementation.');
+        }
+        
+        // Function to go to previous question
+        function previousQuestion() {
+            alert('This would go to the previous question in a real implementation.');
+        }
+        
         // Function to show deposit screen
         function showDepositScreen() {
             showScreen('depositScreen');
         }
-
+        
         // Function to show withdrawal screen
         function showWithdrawalScreen() {
             showScreen('withdrawalScreen');
         }
-
-        // Function to go back to profile from deposit/withdrawal
+        
+        // Function to go back to profile
         function goBackToProfile() {
             showScreen('profileScreen');
         }
